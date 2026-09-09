@@ -1,0 +1,645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
+<title>Swing Lab</title>
+<meta name="theme-color" content="#0F1419">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Swing Lab">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' fill='%230F1419'/%3E%3Cpath d='M52 138 L96 42' stroke='%23E8A13A' stroke-width='9' stroke-linecap='round' fill='none'/%3E%3Ccircle cx='118' cy='128' r='15' fill='%23F2EFE9'/%3E%3Cpath d='M52 138 Q70 96 96 42' stroke='%236FB3A8' stroke-width='4' fill='none' stroke-dasharray='7 7'/%3E%3C/svg%3E">
+
+<style>
+  :root{
+    --bg:#0F1419;
+    --panel:#19202A;
+    --panel-2:#212B36;
+    --line:#2E3B49;
+    --ink:#F2EFE9;
+    --ink-dim:#93A2B1;
+    --signal:#E8A13A;
+    --good:#6FB3A8;
+    --bad:#D2705E;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink)}
+  body{
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:15px;line-height:1.45;
+    padding:max(10px,env(safe-area-inset-top)) 10px max(14px,env(safe-area-inset-bottom));
+    max-width:560px;margin:0 auto;
+    -webkit-font-smoothing:antialiased;
+  }
+  h1{font-size:20px;letter-spacing:-0.01em;margin:0;font-weight:650}
+  h2{font-size:13px;font-weight:600;color:var(--ink-dim);margin:0 0 8px}
+  p{margin:0 0 8px}
+  .masthead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px}
+  .masthead span{font-size:12px;color:var(--ink-dim)}
+  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
+
+  .stage{position:relative;background:#000;border-radius:12px;overflow:hidden;border:1px solid var(--line);margin-bottom:10px}
+  #stage{display:block;width:100%;height:auto;background:#000}
+  #live{display:none;width:100%;height:auto;background:#000}
+  .stage.livemode #stage{display:none}
+  .stage.livemode #live{display:block}
+  .stage-empty{display:flex;align-items:center;justify-content:center;min-height:200px;color:var(--ink-dim);font-size:14px;text-align:center;padding:24px}
+  .badge{position:absolute;top:8px;left:8px;background:rgba(15,20,25,.82);border:1px solid var(--line);
+    border-radius:6px;padding:3px 8px;font-size:12px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .rec{position:absolute;top:8px;right:8px;background:var(--bad);border-radius:6px;padding:3px 8px;font-size:12px;display:none}
+  .stage.recording .rec{display:block}
+
+  .row{display:flex;gap:8px}
+  .row>*{flex:1}
+  button{
+    font:inherit;font-weight:600;color:var(--ink);background:var(--panel-2);
+    border:1px solid var(--line);border-radius:10px;padding:12px 10px;cursor:pointer;
+  }
+  button:active{background:#2B3743}
+  button:disabled{opacity:.4;cursor:default}
+  button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
+  .primary{background:var(--signal);border-color:var(--signal);color:#14181C}
+  .primary:active{background:#D0902F}
+
+  .seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel-2)}
+  .seg button{flex:1;border:0;border-radius:0;background:transparent;font-weight:600;font-size:14px;padding:10px 6px;color:var(--ink-dim)}
+  .seg button+button{border-left:1px solid var(--line)}
+  .seg button[aria-pressed="true"]{background:var(--signal);color:#14181C}
+  .field{margin-bottom:10px}
+  .field:last-child{margin-bottom:0}
+  label.lab{display:block;font-size:13px;color:var(--ink-dim);margin-bottom:5px}
+  select{width:100%;font:inherit;padding:11px 10px;border-radius:10px;background:var(--panel-2);color:var(--ink);border:1px solid var(--line)}
+
+  input[type=range]{width:100%;accent-color:var(--signal);margin:2px 0}
+  .marks{position:relative;height:22px;margin-top:-2px}
+  .mark{position:absolute;transform:translateX(-50%);font-size:11px;color:var(--ink-dim);white-space:nowrap}
+  .mark::before{content:"";display:block;width:1px;height:6px;background:var(--line);margin:0 auto 2px}
+  .keys{display:flex;gap:6px;margin-top:8px}
+  .keys button{flex:1;padding:9px 4px;font-size:13px;font-weight:600}
+
+  .tempo{display:flex;height:34px;border-radius:8px;overflow:hidden;border:1px solid var(--line);font-size:12px;font-weight:600}
+  .tempo div{display:flex;align-items:center;justify-content:center;color:#14181C;min-width:0}
+  .t-back{background:var(--ink-dim)}
+  .t-down{background:var(--signal)}
+  .ratio{font-size:30px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;margin:6px 0 2px}
+  .sub{font-size:13px;color:var(--ink-dim)}
+
+  .metric{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:10px 0;border-top:1px solid var(--line)}
+  .metric:first-of-type{border-top:0}
+  .m-name{font-weight:600}
+  .m-val{font-variant-numeric:tabular-nums;font-weight:650;text-align:right}
+  .m-note{grid-column:1/-1;font-size:13px;color:var(--ink-dim)}
+  .m-bar{grid-column:1/-1;height:5px;background:var(--panel-2);border-radius:3px;position:relative;margin-top:5px;overflow:hidden}
+  .m-bar i{position:absolute;inset:0 auto 0 0;display:block;border-radius:3px}
+  .ok{color:var(--good)} .warn{color:var(--signal)} .off{color:var(--bad)}
+  .bg-ok{background:var(--good)} .bg-warn{background:var(--signal)} .bg-off{background:var(--bad)}
+
+  .score{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
+  .score b{font-size:38px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
+  .status{font-size:13px;color:var(--ink-dim);min-height:18px;margin-top:8px}
+  .caveat{font-size:12px;color:var(--ink-dim);line-height:1.5}
+  details summary{font-size:13px;color:var(--ink-dim);cursor:pointer;padding:4px 0}
+  .hide{display:none}
+  #file{display:none}
+</style>
+</head>
+<body>
+
+<div class="masthead">
+  <h1>Swing Lab</h1>
+  <span id="ready">Loading pose model…</span>
+</div>
+
+<div class="stage" id="stageWrap">
+  <div class="stage-empty" id="empty">Record a slow-motion swing on your Camera app, then load it here.</div>
+  <canvas id="stage" class="hide"></canvas>
+  <video id="live" playsinline muted></video>
+  <div class="badge hide" id="badge">—</div>
+  <div class="rec">Recording</div>
+</div>
+
+<div class="card">
+  <div class="field">
+    <label class="lab" for="file">Swing clip</label>
+    <div class="row">
+      <button class="primary" id="pick">Load a clip</button>
+      <button id="liveBtn">Use live camera</button>
+    </div>
+    <input type="file" id="file" accept="video/*">
+  </div>
+  <div class="row hide" id="liveControls" style="margin-top:8px">
+    <button class="primary" id="capture">Record 3 seconds</button>
+    <button id="stopLive">Close camera</button>
+  </div>
+</div>
+
+<div class="card">
+  <div class="field">
+    <label class="lab">Camera position</label>
+    <div class="seg" id="viewSeg">
+      <button data-v="face" aria-pressed="true">Face-on</button>
+      <button data-v="dtl" aria-pressed="false">Down-the-line</button>
+    </div>
+  </div>
+  <div class="field">
+    <label class="lab">You swing</label>
+    <div class="seg" id="handSeg">
+      <button data-h="R" aria-pressed="true">Right-handed</button>
+      <button data-h="L" aria-pressed="false">Left-handed</button>
+    </div>
+  </div>
+  <div class="field">
+    <label class="lab" for="speed">How the clip was filmed</label>
+    <select id="speed">
+      <option value="1">Normal speed</option>
+      <option value="4">Slo-mo, 120 fps (4× slow)</option>
+      <option value="8" selected>Slo-mo, 240 fps (8× slow)</option>
+      <option value="2">Slo-mo, 60 fps (2× slow)</option>
+    </select>
+  </div>
+  <p class="caveat">Timing only. iPhone slo-mo clips are stretched when saved, so tempo would read 8× long without this.</p>
+</div>
+
+<div class="card hide" id="playerCard">
+  <h2>Frames</h2>
+  <input type="range" id="scrub" min="0" max="0" value="0">
+  <div class="marks" id="marks"></div>
+  <div class="keys">
+    <button data-k="address">Address</button>
+    <button data-k="top">Top</button>
+    <button data-k="impact">Impact</button>
+    <button data-k="finish">Finish</button>
+  </div>
+</div>
+
+<div class="card hide" id="tempoCard">
+  <h2>Tempo</h2>
+  <div class="ratio" id="ratio">—</div>
+  <div class="sub" id="tempoSub"></div>
+  <div class="tempo" style="margin-top:10px">
+    <div class="t-back" id="tBack">back</div>
+    <div class="t-down" id="tDown">down</div>
+  </div>
+</div>
+
+<div class="card hide" id="scoreCard">
+  <div class="score"><b id="scoreNum">—</b><span class="sub" id="scoreLabel"></span></div>
+  <div id="metrics"></div>
+</div>
+
+<div class="card hide" id="fixCard">
+  <h2>What to work on first</h2>
+  <div id="fixes"></div>
+</div>
+
+<div class="card">
+  <div class="status" id="status">Set the phone on the ground or a stand, full body in frame, then film in slo-mo.</div>
+  <div class="row" style="margin-top:10px">
+    <button id="saveRef">Save as my benchmark</button>
+    <button id="install">Add to home screen</button>
+  </div>
+  <details style="margin-top:8px">
+    <summary>What this can and cannot measure</summary>
+    <p class="caveat">It tracks your body only. There is no club tracking, so no club path, shaft plane, face angle or impact position. The target ranges come from common coaching guidance, not from a validated dataset, and a single 2D camera cannot resolve depth — treat every number as an estimate with a few degrees of noise. Impact is detected as the frame of peak hand speed, which is close to but not exactly impact.</p>
+  </details>
+</div>
+
+<script type="module">
+const $ = id => document.getElementById(id);
+const LM = {NOSE:0,LSH:11,RSH:12,LEL:13,REL:14,LWR:15,RWR:16,LHIP:23,RHIP:24,LKNEE:25,RKNEE:26,LANK:27,RANK:28};
+const EDGES = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
+
+let landmarker=null, frames=[], phases=null, view='face', hand='R', stream=null, refSwing=null, current=0;
+
+/* ---------- model ---------- */
+try{
+  const {FilesetResolver, PoseLandmarker} = await import("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/vision_bundle.mjs");
+  const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm");
+  landmarker = await PoseLandmarker.createFromOptions(vision,{
+    baseOptions:{modelAssetPath:"https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_full/float16/1/pose_landmarker_full.task", delegate:"GPU"},
+    runningMode:"VIDEO", numPoses:1, minPoseDetectionConfidence:0.5, minTrackingConfidence:0.5
+  });
+  $('ready').textContent = "Ready";
+}catch(e){
+  $('ready').textContent = "Pose model failed to load";
+  $('status').textContent = "The pose model did not load. Check the connection and reload the page.";
+}
+
+/* ---------- toggles ---------- */
+function seg(el, attr, cb){
+  el.addEventListener('click', e=>{
+    const b = e.target.closest('button'); if(!b) return;
+    [...el.children].forEach(x=>x.setAttribute('aria-pressed', String(x===b)));
+    cb(b.dataset[attr]);
+  });
+}
+seg($('viewSeg'),'v', v=>{view=v; if(frames.length) analyse();});
+seg($('handSeg'),'h', h=>{hand=h; if(frames.length) analyse();});
+
+/* ---------- clip loading ---------- */
+$('pick').onclick = ()=> $('file').click();
+$('file').onchange = async e=>{
+  const f = e.target.files[0]; if(!f) return;
+  closeLive();
+  const v = document.createElement('video');
+  v.playsInline = true; v.muted = true; v.preload='auto';
+  v.src = URL.createObjectURL(f);
+  await new Promise((res,rej)=>{ v.onloadedmetadata=res; v.onerror=()=>rej(new Error('bad video')); });
+  await extractFromVideo(v);
+};
+
+async function extractFromVideo(v){
+  setStatus("Reading frames…");
+  const dur = Math.min(v.duration||0, 12);
+  if(!dur){ setStatus("That clip has no readable duration. Try re-exporting it."); return; }
+  const MAX = 170;
+  let step = 1/30;
+  if(dur/step > MAX) step = dur/MAX;
+
+  const w = 400, h = Math.round(w * (v.videoHeight||16)/(v.videoWidth||9));
+  const cv = document.createElement('canvas'); cv.width=w; cv.height=h;
+  const cx = cv.getContext('2d',{willReadFrequently:true});
+
+  frames = []; let ts = 0;
+  for(let t=0; t<dur-1e-3; t+=step){
+    await seekTo(v,t);
+    cx.drawImage(v,0,0,w,h);
+    ts += 33;
+    let lm=null;
+    try{ const r = landmarker.detectForVideo(cv, ts); if(r.landmarks && r.landmarks[0]) lm = r.landmarks[0]; }catch(err){}
+    const img = new Image(); img.src = cv.toDataURL('image/jpeg',0.6);
+    frames.push({t, lm, img, w, h});
+    if(frames.length % 12 === 0) setStatus(`Reading frames… ${Math.round(100*t/dur)}%`);
+  }
+  URL.revokeObjectURL(v.src);
+  finishLoad();
+}
+
+function seekTo(v,t){
+  return new Promise(res=>{
+    const h=()=>{ v.removeEventListener('seeked',h); res(); };
+    v.addEventListener('seeked',h);
+    v.currentTime = t;
+  });
+}
+
+function finishLoad(){
+  const tracked = frames.filter(f=>f.lm).length;
+  if(tracked < 8){
+    setStatus("Could not find a body in that clip. Get your whole body in frame, keep the background uncluttered and try again.");
+    return;
+  }
+  $('empty').classList.add('hide');
+  $('stage').classList.remove('hide');
+  $('badge').classList.remove('hide');
+  $('playerCard').classList.remove('hide');
+  $('scrub').max = frames.length-1;
+  analyse();
+}
+
+/* ---------- live camera ---------- */
+$('liveBtn').onclick = async ()=>{
+  try{
+    stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720},frameRate:{ideal:60}},audio:false});
+  }catch(e){ setStatus("Camera access was refused. Allow it in Settings, or load a clip instead."); return; }
+  const v = $('live'); v.srcObject = stream; await v.play();
+  $('stageWrap').classList.add('livemode');
+  $('liveControls').classList.remove('hide');
+  $('empty').classList.add('hide');
+  setStatus("Live capture runs near 30 fps, so the downswing gets about six frames. Use it for framing and address checks; film in slo-mo for anything real.");
+};
+$('stopLive').onclick = closeLive;
+function closeLive(){
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  $('stageWrap').classList.remove('livemode');
+  $('liveControls').classList.add('hide');
+}
+$('capture').onclick = async ()=>{
+  const v = $('live');
+  const w = 360, h = Math.round(w * v.videoHeight/v.videoWidth);
+  const cv = document.createElement('canvas'); cv.width=w; cv.height=h;
+  const cx = cv.getContext('2d');
+  const shots=[]; const end = performance.now()+3000;
+  $('stageWrap').classList.add('recording');
+  setStatus("Recording…");
+  while(performance.now() < end && shots.length < 110){
+    cx.drawImage(v,0,0,w,h);
+    shots.push(cx.getImageData(0,0,w,h));
+    await new Promise(r=>requestAnimationFrame(r));
+  }
+  $('stageWrap').classList.remove('recording');
+  closeLive();
+  setStatus("Analysing…");
+  frames=[]; let ts=0;
+  const cv2 = document.createElement('canvas'); cv2.width=w; cv2.height=h;
+  const cx2 = cv2.getContext('2d');
+  for(const s of shots){
+    cx2.putImageData(s,0,0);
+    ts += 33;
+    let lm=null;
+    try{ const r = landmarker.detectForVideo(cv2, ts); if(r.landmarks && r.landmarks[0]) lm=r.landmarks[0]; }catch(e){}
+    const img = new Image(); img.src = cv2.toDataURL('image/jpeg',0.6);
+    frames.push({t:0,lm,img,w,h});
+  }
+  $('speed').value = "1";
+  finishLoad();
+};
+
+/* ---------- geometry ---------- */
+const px = (f,i)=> f.lm[i];
+const mid = (a,b)=>({x:(a.x+b.x)/2,y:(a.y+b.y)/2});
+const dist = (a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+function angleAt(a,b,c){
+  const v1={x:a.x-b.x,y:a.y-b.y}, v2={x:c.x-b.x,y:c.y-b.y};
+  const d=(v1.x*v2.x+v1.y*v2.y)/(Math.hypot(v1.x,v1.y)*Math.hypot(v2.x,v2.y)||1);
+  return Math.acos(Math.max(-1,Math.min(1,d)))*180/Math.PI;
+}
+function vertTilt(from,to){ // degrees off vertical
+  return Math.abs(Math.atan2(to.x-from.x, from.y-to.y))*180/Math.PI;
+}
+const hands = f => mid(px(f,LM.LWR), px(f,LM.RWR));
+const hips  = f => mid(px(f,LM.LHIP), px(f,LM.RHIP));
+const shoul = f => mid(px(f,LM.LSH), px(f,LM.RSH));
+
+/* ---------- phase detection ---------- */
+function detectPhases(fs){
+  const idx = fs.map((f,i)=>f.lm?i:-1).filter(i=>i>=0);
+  if(idx.length<8) return null;
+  const H = {};
+  idx.forEach(i=> H[i]=hands(fs[i]));
+  const speed = {};
+  for(let k=1;k<idx.length;k++){
+    const i=idx[k], p=idx[k-1];
+    speed[i] = dist(H[i],H[p]) / Math.max(1,(i-p));
+  }
+  let impact = idx[1], best=-1;
+  for(const i of idx){ if(speed[i]>best){best=speed[i]; impact=i;} }
+  // top: highest hands (lowest y) before impact
+  let top = idx[0], hi=Infinity;
+  for(const i of idx){ if(i>=impact) break; if(H[i].y<hi){hi=H[i].y; top=i;} }
+  // address: last quiet frame before hands start moving, searching back from top
+  const base = H[idx[0]];
+  let address = idx[0];
+  for(const i of idx){
+    if(i>=top) break;
+    const scale = dist(shoul(fs[i]),hips(fs[i]))||0.2;
+    if(dist(H[i],base)/scale < 0.12) address = i;
+  }
+  // finish: hands settle after impact
+  let finish = idx[idx.length-1];
+  for(const i of idx){
+    if(i<=impact) continue;
+    if(speed[i] < best*0.12){ finish = i; break; }
+  }
+  if(top<=address || impact<=top) return null;
+  return {address, top, impact, finish};
+}
+
+/* ---------- metric definitions ---------- */
+function band(v, lo, hi, hardLo, hardHi){
+  if(v>=lo && v<=hi) return 100;
+  const over = v<lo ? (lo-v)/Math.max(1e-6,(lo-hardLo)) : (v-hi)/Math.max(1e-6,(hardHi-hi));
+  return Math.max(0, Math.round(100 - over*100));
+}
+
+function buildMetrics(fs,p){
+  const A=fs[p.address], T=fs[p.top], I=fs[p.impact];
+  const scale = dist(shoul(A),hips(A)) || 0.2;
+  const lead = hand==='R' ? {sh:LM.LSH, el:LM.LEL, wr:LM.LWR, knee:LM.LKNEE, ank:LM.LANK}
+                          : {sh:LM.RSH, el:LM.REL, wr:LM.RWR, knee:LM.RKNEE, ank:LM.RANK};
+  const M=[];
+  const range = (a,b)=>{ let mx=0; for(let i=a;i<=b;i++){ if(fs[i].lm) mx=Math.max(mx,Math.abs(px(fs[i],LM.NOSE).x-px(A,LM.NOSE).x)); } return mx; };
+
+  if(view==='face'){
+    const sway = 100*range(p.address,p.impact)/scale;
+    M.push({name:"Head sway", val:sway, unit:"% of torso", lo:0, hi:12, hLo:-12, hHi:30,
+      note:"Side-to-side head travel from address to impact.",
+      drill:"Set an alignment stick in the ground just outside your lead ear and rehearse backswings without touching it."});
+
+    const lift = 100*(px(A,LM.NOSE).y - px(T,LM.NOSE).y)/scale;
+    M.push({name:"Head height change", val:lift, unit:"% of torso", lo:-6, hi:6, hLo:-22, hHi:22,
+      note:"Positive means you rise into the top, negative means you drop.",
+      drill:"Rehearse to the top with your trail hand on a wall at head height, keeping light contact throughout."});
+
+    const hipShift = 100*(hips(T).x - hips(A).x)/scale * (hand==='R'?1:-1);
+    M.push({name:"Hip slide in backswing", val:Math.abs(hipShift), unit:"% of torso", lo:0, hi:10, hHi:30, hLo:0,
+      note:"Lateral hip travel rather than rotation.",
+      drill:"Put a chair or bag against your trail hip and turn without pushing into it."});
+
+    const armAngle = angleAt(px(T,lead.sh),px(T,lead.el),px(T,lead.wr));
+    M.push({name:"Lead arm at the top", val:armAngle, unit:"degrees", lo:155, hi:180, hLo:110, hHi:190,
+      note:"180 is dead straight. Some fold is normal and not always a fault.",
+      drill:"Make slow half-swings feeling the lead arm extend as the trail elbow folds, then rebuild to full length."});
+
+    const shTop = dist(px(T,LM.LSH),px(T,LM.RSH)), shAd = dist(px(A,LM.LSH),px(A,LM.RSH));
+    const turn = Math.acos(Math.max(0,Math.min(1, shTop/Math.max(shAd,1e-6))))*180/Math.PI;
+    M.push({name:"Shoulder turn (estimated)", val:turn, unit:"degrees", lo:70, hi:100, hLo:30, hHi:130,
+      note:"Estimated from how much your shoulders narrow on camera. Noisy — read it as a trend across swings.",
+      drill:"Cross your arms over your chest and turn your lead shoulder behind the ball, holding for two seconds."});
+
+    const hipTop = dist(px(T,LM.LHIP),px(T,LM.RHIP)), hipAd = dist(px(A,LM.LHIP),px(A,LM.RHIP));
+    const hTurn = Math.acos(Math.max(0,Math.min(1, hipTop/Math.max(hipAd,1e-6))))*180/Math.PI;
+    M.push({name:"Hip turn (estimated)", val:hTurn, unit:"degrees", lo:30, hi:55, hLo:5, hHi:80,
+      note:"Same estimate applied to your hips. Shoulders should turn considerably more than hips.",
+      drill:"Turn into your trail hip with the lead knee working inward, feeling pressure in the trail glute."});
+  } else {
+    const spineA = vertTilt(hips(A), shoul(A));
+    M.push({name:"Spine angle at address", val:spineA, unit:"degrees", lo:25, hi:42, hLo:5, hHi:60,
+      note:"Forward tilt from the hips measured against vertical.",
+      drill:"Set up with a club along your spine touching head, upper back and tailbone, then bend from the hips only."});
+
+    const spineT = Math.abs(vertTilt(hips(fs[p.top]), shoul(fs[p.top])) - spineA);
+    M.push({name:"Posture change to the top", val:spineT, unit:"degrees", lo:0, hi:5, hHi:20, hLo:0,
+      note:"How far your spine angle drifts from address to the top.",
+      drill:"Back your rear against a wall at address and stay in contact as you turn to the top."});
+
+    const spineI = Math.abs(vertTilt(hips(I), shoul(I)) - spineA);
+    M.push({name:"Posture change at impact", val:spineI, unit:"degrees", lo:0, hi:8, hHi:26, hLo:0,
+      note:"Standing up through the ball shows here.",
+      drill:"Hit half wedges keeping your chest pointed down at the ball until well after contact."});
+
+    const ext = 100*Math.abs(hips(I).x - hips(A).x)/scale;
+    M.push({name:"Hip drift toward the ball", val:ext, unit:"% of torso", lo:0, hi:8, hHi:28, hLo:0,
+      note:"The early extension pattern: hips moving toward the ball line through the downswing.",
+      drill:"Stand with your rear touching a chair back and keep contact through impact on slow swings."});
+
+    const depth = 100*Math.abs(px(fs[p.top],LM.NOSE).x - px(A,LM.NOSE).x)/scale;
+    M.push({name:"Head movement", val:depth, unit:"% of torso", lo:0, hi:10, hHi:30, hLo:0,
+      note:"Head travel toward or away from the ball during the backswing.",
+      drill:"Rehearse backswings with your forehead lightly against a wall or a partner's hand."});
+
+    const kA = angleAt(px(A,lead.sh),px(A,lead.knee),px(A,lead.ank));
+    const kI = angleAt(px(I,lead.sh),px(I,lead.knee),px(I,lead.ank));
+    M.push({name:"Lead knee change", val:Math.abs(kI-kA), unit:"degrees", lo:0, hi:25, hHi:60, hLo:0,
+      note:"Some straightening at impact is normal and powerful. Large values usually come with standing up.",
+      drill:"Rehearse impact positions holding lead-side flex, then add speed gradually."});
+  }
+  M.forEach(m=>{ m.score = band(m.val, m.lo, m.hi, m.hLo ?? m.lo, m.hHi ?? m.hi); });
+  return M;
+}
+
+/* ---------- analysis + render ---------- */
+function analyse(){
+  phases = detectPhases(frames);
+  if(!phases){
+    setStatus("Could not find a full swing in that clip. Include address through finish, and keep your whole body in frame.");
+    $('tempoCard').classList.add('hide'); $('scoreCard').classList.add('hide'); $('fixCard').classList.add('hide');
+    draw(0); return;
+  }
+  const speedFactor = parseFloat($('speed').value)||1;
+  const frameSec = (frames[1] && frames[1].t ? (frames[1].t-frames[0].t) : 1/30) / speedFactor;
+  const back = (phases.top - phases.address) * frameSec;
+  const down = (phases.impact - phases.top) * frameSec;
+  const ratio = down>0 ? back/down : 0;
+
+  $('tempoCard').classList.remove('hide');
+  $('ratio').textContent = ratio ? `${ratio.toFixed(1)} : 1` : "—";
+  const tempoJudge = ratio>=2.6 && ratio<=3.4 ? "close to the 3:1 most tour players show"
+                    : ratio<2.6 ? "quicker than 3:1 — your transition is rushing the backswing"
+                    : "slower than 3:1 — the downswing is lagging behind a long backswing";
+  $('tempoSub').textContent = `Backswing ${back.toFixed(2)}s, downswing ${down.toFixed(2)}s. That is ${tempoJudge}.`;
+  const totalT = Math.max(back+down, 1e-6);
+  $('tBack').style.flex = back/totalT; $('tDown').style.flex = down/totalT;
+  $('tBack').textContent = `${back.toFixed(2)}s`; $('tDown').textContent = `${down.toFixed(2)}s`;
+
+  const M = buildMetrics(frames, phases);
+  renderMetrics(M);
+  renderMarks();
+  $('scrub').value = phases.impact;
+  draw(phases.impact);
+  setStatus("Scrub the timeline or jump to a checkpoint. Swing the same club three times and watch which numbers stay put.");
+}
+
+function cls(s){ return s>=80?'ok':s>=55?'warn':'off'; }
+
+function renderMetrics(M){
+  const total = Math.round(M.reduce((a,m)=>a+m.score,0)/M.length);
+  $('scoreCard').classList.remove('hide');
+  $('scoreNum').textContent = total;
+  $('scoreNum').className = cls(total);
+  $('scoreLabel').textContent = total>=80 ? "consistent across the checkpoints measured"
+    : total>=55 ? "one or two positions are costing you" : "several positions are well outside the usual ranges";
+
+  const wrap = $('metrics'); wrap.innerHTML='';
+  for(const m of M){
+    const d = document.createElement('div'); d.className='metric';
+    const refTxt = refSwing && refSwing[m.name]!==undefined ? ` Benchmark ${refSwing[m.name].toFixed(0)}.` : "";
+    d.innerHTML = `<div class="m-name">${m.name}</div>
+      <div class="m-val ${cls(m.score)}">${m.val.toFixed(m.unit==='degrees'?0:1)}<span class="sub"> ${m.unit}</span></div>
+      <div class="m-note">Usual range ${m.lo}–${m.hi}.${refTxt} ${m.note}</div>
+      <div class="m-bar"><i class="bg-${cls(m.score)}" style="width:${m.score}%"></i></div>`;
+    wrap.appendChild(d);
+  }
+  const bad = M.filter(m=>m.score<80).sort((a,b)=>a.score-b.score).slice(0,3);
+  const fx = $('fixes'); fx.innerHTML='';
+  if(bad.length){
+    $('fixCard').classList.remove('hide');
+    bad.forEach(m=>{
+      const d=document.createElement('div'); d.className='metric';
+      d.innerHTML=`<div class="m-name">${m.name}</div><div class="m-val ${cls(m.score)}">${m.score}</div><div class="m-note">${m.drill}</div>`;
+      fx.appendChild(d);
+    });
+  } else {
+    $('fixCard').classList.add('hide');
+  }
+  window.__lastMetrics = M;
+}
+
+function renderMarks(){
+  const el=$('marks'); el.innerHTML='';
+  const labels={address:"Address",top:"Top",impact:"Impact",finish:"Finish"};
+  for(const k in labels){
+    const pct = 100*phases[k]/Math.max(1,frames.length-1);
+    const d=document.createElement('div'); d.className='mark';
+    d.style.left = `${Math.min(94,Math.max(6,pct))}%`;
+    d.textContent = labels[k];
+    el.appendChild(d);
+  }
+}
+
+/* ---------- drawing ---------- */
+const cv = $('stage'), cx = cv.getContext('2d');
+function draw(i){
+  const f = frames[i]; if(!f) return;
+  current = i;
+  cv.width = f.w; cv.height = f.h;
+  cx.clearRect(0,0,f.w,f.h);
+  if(f.img.complete) cx.drawImage(f.img,0,0,f.w,f.h);
+  if(f.lm){
+    cx.lineWidth = Math.max(2, f.w/140);
+    cx.strokeStyle = "#E8A13A";
+    for(const [a,b] of EDGES){
+      const p1=f.lm[a], p2=f.lm[b];
+      if(!p1||!p2) continue;
+      cx.beginPath(); cx.moveTo(p1.x*f.w,p1.y*f.h); cx.lineTo(p2.x*f.w,p2.y*f.h); cx.stroke();
+    }
+    cx.fillStyle = "#F2EFE9";
+    for(const j of [0,11,12,13,14,15,16,23,24,25,26,27,28]){
+      const p=f.lm[j]; if(!p) continue;
+      cx.beginPath(); cx.arc(p.x*f.w,p.y*f.h, Math.max(2.5,f.w/110),0,7); cx.fill();
+    }
+    // hand path trace
+    if(phases){
+      cx.strokeStyle="rgba(111,179,168,.85)"; cx.lineWidth=Math.max(1.5,f.w/220);
+      cx.beginPath(); let started=false;
+      for(let k=phases.address;k<=Math.min(i,phases.finish);k++){
+        const g=frames[k]; if(!g.lm) continue;
+        const h=hands(g);
+        if(!started){cx.moveTo(h.x*f.w,h.y*f.h);started=true;} else cx.lineTo(h.x*f.w,h.y*f.h);
+      }
+      cx.stroke();
+    }
+    // spine line
+    cx.strokeStyle="rgba(242,239,233,.5)"; cx.setLineDash([5,5]); cx.lineWidth=Math.max(1.5,f.w/240);
+    const s=shoul(f), hp=hips(f);
+    cx.beginPath(); cx.moveTo(hp.x*f.w,hp.y*f.h); cx.lineTo(s.x*f.w,s.y*f.h); cx.stroke();
+    cx.setLineDash([]);
+  }
+  let tag = `Frame ${i+1} of ${frames.length}`;
+  if(phases){
+    for(const k of ['address','top','impact','finish']) if(phases[k]===i) tag = k[0].toUpperCase()+k.slice(1);
+  }
+  $('badge').textContent = tag;
+}
+$('scrub').oninput = e => draw(+e.target.value);
+$('speed').onchange = ()=>{ if(frames.length && phases) analyse(); };
+document.querySelectorAll('.keys button').forEach(b=>{
+  b.onclick = ()=>{ if(!phases) return; const i=phases[b.dataset.k]; $('scrub').value=i; draw(i); };
+});
+
+/* ---------- benchmark ---------- */
+$('saveRef').onclick = ()=>{
+  if(!window.__lastMetrics){ setStatus("Analyse a swing first, then save it as the benchmark."); return; }
+  refSwing = {}; window.__lastMetrics.forEach(m=>refSwing[m.name]=m.val);
+  try{ localStorage.setItem('swinglab-ref', JSON.stringify(refSwing)); }catch(e){}
+  renderMetrics(window.__lastMetrics);
+  setStatus("Saved. Later swings now show this one alongside for comparison.");
+};
+try{ const r = localStorage.getItem('swinglab-ref'); if(r) refSwing = JSON.parse(r); }catch(e){}
+
+function setStatus(t){ $('status').textContent = t; }
+
+/* ---------- install as web app ---------- */
+const manifest = {
+  name:"Swing Lab", short_name:"Swing Lab", start_url:".", display:"standalone",
+  background_color:"#0F1419", theme_color:"#0F1419",
+  icons:[{src:"data:image/svg+xml,"+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#0F1419"/><path d="M148 392 L272 120" stroke="#E8A13A" stroke-width="26" stroke-linecap="round" fill="none"/><circle cx="336" cy="364" r="42" fill="#F2EFE9"/><path d="M148 392 Q198 274 272 120" stroke="#6FB3A8" stroke-width="12" fill="none" stroke-dasharray="20 20"/></svg>`),
+    sizes:"512x512", type:"image/svg+xml", purpose:"any"}]
+};
+const mLink = document.createElement('link');
+mLink.rel='manifest';
+mLink.href = URL.createObjectURL(new Blob([JSON.stringify(manifest)],{type:'application/manifest+json'}));
+document.head.appendChild(mLink);
+
+let deferred=null;
+window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferred=e; });
+$('install').onclick = async ()=>{
+  if(deferred){ deferred.prompt(); await deferred.userChoice; deferred=null; return; }
+  if(window.navigator.standalone){ setStatus("Already installed."); return; }
+  setStatus("In Safari, tap the share button, then Add to Home Screen. It then opens full screen with no browser bar.");
+};
+if(window.navigator.standalone || matchMedia('(display-mode: standalone)').matches) $('install').style.display='none';
+</script>
+</body>
+</html>
