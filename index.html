@@ -151,8 +151,8 @@
     <div class="field">
       <label class="lab" for="clipLen">How long to record</label>
       <select id="clipLen">
-        <option value="3" selected>3 seconds</option>
-        <option value="5">5 seconds</option>
+        <option value="3">3 seconds</option>
+        <option value="5" selected>5 seconds</option>
         <option value="8">8 seconds</option>
       </select>
     </div>
@@ -199,6 +199,17 @@
     <button data-k="top">Top</button>
     <button data-k="impact">Impact</button>
     <button data-k="finish">Finish</button>
+  </div>
+  <div class="row" style="margin-top:8px">
+    <button class="primary" id="play">Play swing</button>
+    <select id="rate" style="flex:0 0 44%">
+      <option value="1">As filmed</option>
+      <option value="0.5">Half speed</option>
+      <option value="0.25">Quarter speed</option>
+    </select>
+  </div>
+  <div class="row" style="margin-top:8px">
+    <button id="scope" aria-pressed="true">Looping address to finish</button>
   </div>
 </div>
 
