@@ -49,6 +49,14 @@
     border-radius:6px;padding:3px 8px;font-size:12px;color:var(--ink);font-variant-numeric:tabular-nums}
   .rec{position:absolute;top:8px;right:8px;background:var(--bad);border-radius:6px;padding:3px 8px;font-size:12px;display:none}
   .stage.recording .rec{display:block}
+  .stage.recording{outline:4px solid var(--bad);outline-offset:-4px}
+  .stage.recording::after{content:"";position:absolute;inset:0;background:rgba(210,112,94,.35);pointer-events:none;animation:pulse .9s infinite}
+  @keyframes pulse{0%,100%{opacity:.2}50%{opacity:.9}}
+  @media (prefers-reduced-motion:reduce){.stage.recording::after{animation:none;opacity:.4}}
+  .count{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(15,20,25,.6);color:var(--signal);font-size:26vw;font-weight:650;
+    font-variant-numeric:tabular-nums;letter-spacing:-0.04em}
+  .stage.counting .count{display:flex}
 
   .row{display:flex;gap:8px}
   .row>*{flex:1}
@@ -117,6 +125,7 @@
   <video id="live" playsinline muted></video>
   <div class="badge hide" id="badge">—</div>
   <div class="rec">Recording</div>
+  <div class="count" id="count">5</div>
 </div>
 
 <div class="card">
@@ -128,8 +137,28 @@
     </div>
     <input type="file" id="file" accept="video/*">
   </div>
+  <div class="hide" id="delayField" style="margin-top:10px">
+    <div class="field">
+      <label class="lab" for="delay">Countdown before it starts</label>
+      <select id="delay">
+        <option value="0">Start immediately</option>
+        <option value="5">5 seconds</option>
+        <option value="10" selected>10 seconds</option>
+        <option value="15">15 seconds</option>
+        <option value="20">20 seconds</option>
+      </select>
+    </div>
+    <div class="field">
+      <label class="lab" for="clipLen">How long to record</label>
+      <select id="clipLen">
+        <option value="3" selected>3 seconds</option>
+        <option value="5">5 seconds</option>
+        <option value="8">8 seconds</option>
+      </select>
+    </div>
+  </div>
   <div class="row hide" id="liveControls" style="margin-top:8px">
-    <button class="primary" id="capture">Record 3 seconds</button>
+    <button class="primary" id="capture">Start countdown</button>
     <button id="stopLive">Close camera</button>
   </div>
 </div>
@@ -299,6 +328,38 @@ function finishLoad(){
 }
 
 /* ---------- live camera ---------- */
+let torchAvailable = false, wakeLock = null, actx = null;
+
+const wait = ms => new Promise(r=>setTimeout(r,ms));
+
+function beep(freq, dur, vol){
+  try{
+    actx = actx || new (window.AudioContext||window.webkitAudioContext)();
+    if(actx.state === 'suspended') actx.resume();
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = 'sine'; o.frequency.value = freq;
+    const t = actx.currentTime;
+    g.gain.setValueAtTime(0.0001,t);
+    g.gain.exponentialRampToValueAtTime(vol||0.4, t+0.012);
+    g.gain.exponentialRampToValueAtTime(0.0001, t+dur);
+    o.connect(g); g.connect(actx.destination);
+    o.start(t); o.stop(t+dur+0.03);
+  }catch(e){}
+}
+
+async function keepAwake(){
+  try{ if('wakeLock' in navigator && !wakeLock) wakeLock = await navigator.wakeLock.request('screen'); }catch(e){}
+}
+function releaseAwake(){ try{ if(wakeLock){ wakeLock.release(); wakeLock=null; } }catch(e){} }
+document.addEventListener('visibilitychange', ()=>{ if(document.visibilityState==='visible' && stream) keepAwake(); });
+
+async function setTorch(on){
+  if(!torchAvailable || !stream) return false;
+  const track = stream.getVideoTracks()[0];
+  if(!track) return false;
+  try{ await track.applyConstraints({advanced:[{torch:!!on}]}); return true; }catch(e){ return false; }
+}
+
 $('liveBtn').onclick = async ()=>{
   try{
     stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720},frameRate:{ideal:60}},audio:false});
@@ -306,29 +367,66 @@ $('liveBtn').onclick = async ()=>{
   const v = $('live'); v.srcObject = stream; await v.play();
   $('stageWrap').classList.add('livemode');
   $('liveControls').classList.remove('hide');
+  $('delayField').classList.remove('hide');
   $('empty').classList.add('hide');
-  setStatus("Live capture runs near 30 fps, so the downswing gets about six frames. Use it for framing and address checks; film in slo-mo for anything real.");
+  keepAwake();
+
+  const track = stream.getVideoTracks()[0];
+  const caps = track && track.getCapabilities ? track.getCapabilities() : {};
+  torchAvailable = !!caps.torch;
+
+  setStatus(torchAvailable
+    ? "Countdown beeps while you set up, then a long tone and the flash mean it is recording."
+    : "This browser cannot control the phone flash, so listen for the tones: rising beeps during the countdown, one long tone at the start, a low tone at the end.");
 };
 $('stopLive').onclick = closeLive;
 function closeLive(){
+  setTorch(false);
   if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
-  $('stageWrap').classList.remove('livemode');
+  releaseAwake();
+  $('stageWrap').classList.remove('livemode','counting','recording');
   $('liveControls').classList.add('hide');
+  $('delayField').classList.add('hide');
 }
 $('capture').onclick = async ()=>{
   const v = $('live');
+  const delay = parseInt($('delay').value,10)||0;
+  const clipLen = parseFloat($('clipLen').value)||3;
+  $('capture').disabled = true; $('capture').textContent = "Get ready";
+  beep(660,0.09);
+  await keepAwake();
+
+  if(delay > 0){
+    $('stageWrap').classList.add('counting');
+    for(let s=delay; s>0; s--){
+      $('count').textContent = s;
+      if(s<=3){ beep(990,0.11,0.5); }
+      else if(s<=5 || s%5===0){ beep(560,0.07,0.3); }
+      setStatus(`Starting in ${s}…`);
+      await wait(1000);
+    }
+    $('stageWrap').classList.remove('counting');
+  }
+
   const w = 360, h = Math.round(w * v.videoHeight/v.videoWidth);
   const cv = document.createElement('canvas'); cv.width=w; cv.height=h;
   const cx = cv.getContext('2d');
-  const shots=[]; const end = performance.now()+3000;
+  const shots=[]; const end = performance.now()+clipLen*1000;
+  const maxShots = Math.round(clipLen*40);
   $('stageWrap').classList.add('recording');
+  $('capture').textContent = "Recording";
+  await setTorch(true);
+  beep(1320,0.45,0.5);
   setStatus("Recording…");
-  while(performance.now() < end && shots.length < 110){
+  while(performance.now() < end && shots.length < maxShots){
     cx.drawImage(v,0,0,w,h);
     shots.push(cx.getImageData(0,0,w,h));
     await new Promise(r=>requestAnimationFrame(r));
   }
+  await setTorch(false);
+  beep(330,0.5,0.45);
   $('stageWrap').classList.remove('recording');
+  $('capture').disabled = false; $('capture').textContent = "Start countdown";
   closeLive();
   setStatus("Analysing…");
   frames=[]; let ts=0;
