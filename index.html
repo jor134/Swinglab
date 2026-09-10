@@ -4,110 +4,174 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1">
 <title>Swing Lab</title>
-<meta name="theme-color" content="#0F1419">
+<meta name="theme-color" content="#12241A">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="Swing Lab">
-<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' fill='%230F1419'/%3E%3Cpath d='M52 138 L96 42' stroke='%23E8A13A' stroke-width='9' stroke-linecap='round' fill='none'/%3E%3Ccircle cx='118' cy='128' r='15' fill='%23F2EFE9'/%3E%3Cpath d='M52 138 Q70 96 96 42' stroke='%236FB3A8' stroke-width='4' fill='none' stroke-dasharray='7 7'/%3E%3C/svg%3E">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' fill='%2312241A'/%3E%3Crect y='128' width='180' height='52' fill='%232E4A32'/%3E%3Cpath d='M62 128 L62 40 L118 56 L62 70' fill='%23F0C24B'/%3E%3Ccircle cx='128' cy='150' r='13' fill='%23EDF2E8'/%3E%3C/svg%3E">
 
 <style>
   :root{
-    --bg:#0F1419;
-    --panel:#19202A;
-    --panel-2:#212B36;
-    --line:#2E3B49;
-    --ink:#F2EFE9;
-    --ink-dim:#93A2B1;
-    --signal:#E8A13A;
-    --good:#6FB3A8;
-    --bad:#D2705E;
+    /* turf at dusk */
+    --turf-deep:#12241A;
+    --turf:#1B3324;
+    --turf-line:#2F5238;
+    --mow:#274A31;
+    /* halogen floodlight */
+    --flood:#F0C24B;
+    --flood-soft:rgba(240,194,75,.16);
+    /* chalk and scorecard stock */
+    --chalk:#EDF2E8;
+    --chalk-dim:#9FB6A4;
+    --card-stock:#E1E0CF;
+    --ink:#1C2B20;
+    --pencil:#7C8375;
+    /* markers */
+    --flag:#C4453A;
+    --grass:#79B860;
   }
   *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-  html,body{margin:0;padding:0;background:var(--bg);color:var(--ink)}
+  html{background:var(--turf-deep)}
   body{
+    margin:0 auto;max-width:560px;
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    font-size:15px;line-height:1.45;
-    padding:max(10px,env(safe-area-inset-top)) 10px max(14px,env(safe-area-inset-bottom));
-    max-width:560px;margin:0 auto;
+    font-size:15px;line-height:1.45;color:var(--chalk);
+    padding:max(10px,env(safe-area-inset-top)) 10px max(16px,env(safe-area-inset-bottom));
+    background:
+      radial-gradient(120% 42% at 50% -8%, var(--flood-soft) 0%, rgba(240,194,75,0) 62%),
+      linear-gradient(180deg,#0E1F16 0%, var(--turf-deep) 34%, #16291D 100%);
+    background-attachment:fixed;
     -webkit-font-smoothing:antialiased;
   }
-  h1{font-size:20px;letter-spacing:-0.01em;margin:0;font-weight:650}
-  h2{font-size:13px;font-weight:600;color:var(--ink-dim);margin:0 0 8px}
-  p{margin:0 0 8px}
-  .masthead{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:10px}
-  .masthead span{font-size:12px;color:var(--ink-dim)}
-  .card{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px;margin-bottom:10px}
 
-  .stage{position:relative;background:#000;border-radius:12px;overflow:hidden;border:1px solid var(--line);margin-bottom:10px}
-  #stage{display:block;width:100%;height:auto;background:#000}
-  #live{display:none;width:100%;height:auto;background:#000}
+  /* the bay sign overhead */
+  .masthead{
+    display:flex;align-items:center;justify-content:space-between;gap:12px;
+    background:var(--mow);border:1px solid var(--turf-line);
+    box-shadow:inset 0 0 0 2px rgba(237,242,232,.14);
+    border-radius:3px;padding:11px 13px;margin-bottom:12px;
+  }
+  h1{margin:0;font-size:21px;font-weight:700;letter-spacing:-0.015em;color:var(--chalk)}
+  .masthead span{font-size:12px;color:var(--flood);text-align:right;line-height:1.3}
+
+  h2{font-size:13px;font-weight:700;color:var(--chalk-dim);margin:0 0 9px}
+  p{margin:0 0 8px}
+
+  /* turf panels: soft, dark, recessive */
+  .card{background:var(--turf);border:1px solid var(--turf-line);border-radius:14px;padding:13px;margin-bottom:11px}
+
+  /* scorecard stock: squared, ruled, the thing you read */
+  .paper{
+    background:var(--card-stock);color:var(--ink);
+    border:1px solid #C3C2AE;border-radius:2px;
+    box-shadow:0 2px 0 rgba(0,0,0,.35);
+    padding:14px;margin-bottom:11px;
+  }
+  .paper h2{color:var(--pencil);border-bottom:2px solid var(--ink);padding-bottom:6px}
+  .paper .sub{color:var(--pencil)}
+
+  /* the bay: video on the mat, netting above, mown turf below */
+  .stage{
+    position:relative;background:#05100A;border-radius:4px;overflow:hidden;
+    border:1px solid var(--turf-line);
+    border-bottom:11px solid var(--mow);
+    box-shadow:0 0 0 1px rgba(240,194,75,.12), 0 8px 26px rgba(0,0,0,.5);
+    margin-bottom:11px;
+  }
+  #stage{display:block;width:100%;height:auto;background:#05100A}
+  #live{display:none;width:100%;height:auto;background:#05100A}
   .stage.livemode #stage{display:none}
   .stage.livemode #live{display:block}
-  .stage-empty{display:flex;align-items:center;justify-content:center;min-height:200px;color:var(--ink-dim);font-size:14px;text-align:center;padding:24px}
-  .badge{position:absolute;top:8px;left:8px;background:rgba(15,20,25,.82);border:1px solid var(--line);
-    border-radius:6px;padding:3px 8px;font-size:12px;color:var(--ink);font-variant-numeric:tabular-nums}
-  .rec{position:absolute;top:8px;right:8px;background:var(--bad);border-radius:6px;padding:3px 8px;font-size:12px;display:none}
+  .stage-empty{
+    display:flex;align-items:center;justify-content:center;min-height:210px;
+    color:var(--chalk-dim);font-size:14px;text-align:center;padding:26px;
+    background:repeating-linear-gradient(90deg,rgba(47,82,56,.5) 0 2px, transparent 2px 26px),
+               repeating-linear-gradient(0deg,rgba(47,82,56,.5) 0 2px, transparent 2px 26px);
+  }
+  .badge{
+    position:absolute;top:8px;left:8px;background:rgba(5,16,10,.8);
+    border:1px solid rgba(240,194,75,.45);border-radius:2px;padding:3px 8px;
+    font-size:12px;color:var(--flood);font-variant-numeric:tabular-nums
+  }
+  .rec{position:absolute;top:8px;right:8px;background:var(--flag);border-radius:2px;padding:3px 8px;font-size:12px;display:none;color:#fff}
   .stage.recording .rec{display:block}
-  .stage.recording{outline:4px solid var(--bad);outline-offset:-4px}
-  .stage.recording::after{content:"";position:absolute;inset:0;background:rgba(210,112,94,.35);pointer-events:none;animation:pulse .9s infinite}
+  .stage.recording{box-shadow:0 0 0 3px var(--flag), 0 8px 26px rgba(0,0,0,.5)}
+  .stage.recording::after{content:"";position:absolute;inset:0;background:rgba(196,69,58,.3);pointer-events:none;animation:pulse .9s infinite}
   @keyframes pulse{0%,100%{opacity:.2}50%{opacity:.9}}
   @media (prefers-reduced-motion:reduce){.stage.recording::after{animation:none;opacity:.4}}
-  .count{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
-    background:rgba(15,20,25,.6);color:var(--signal);font-size:26vw;font-weight:650;
-    font-variant-numeric:tabular-nums;letter-spacing:-0.04em}
+  .count{
+    position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+    background:rgba(5,16,10,.62);color:var(--flood);font-size:26vw;font-weight:700;
+    font-variant-numeric:tabular-nums;letter-spacing:-0.05em;text-shadow:0 0 30px rgba(240,194,75,.5)
+  }
   .stage.counting .count{display:flex}
 
   .row{display:flex;gap:8px}
   .row>*{flex:1}
   button{
-    font:inherit;font-weight:600;color:var(--ink);background:var(--panel-2);
-    border:1px solid var(--line);border-radius:10px;padding:12px 10px;cursor:pointer;
+    font:inherit;font-weight:650;color:var(--chalk);background:var(--mow);
+    border:1px solid var(--turf-line);border-radius:8px;padding:12px 10px;cursor:pointer;
   }
-  button:active{background:#2B3743}
-  button:disabled{opacity:.4;cursor:default}
-  button:focus-visible{outline:2px solid var(--signal);outline-offset:2px}
-  .primary{background:var(--signal);border-color:var(--signal);color:#14181C}
-  .primary:active{background:#D0902F}
+  button:active{background:#325C3D}
+  button:disabled{opacity:.45;cursor:default}
+  button:focus-visible{outline:2px solid var(--flood);outline-offset:2px}
+  .primary{background:var(--flood);border-color:#D6A833;color:#20180A}
+  .primary:active{background:#DBAE38}
 
-  .seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--panel-2)}
-  .seg button{flex:1;border:0;border-radius:0;background:transparent;font-weight:600;font-size:14px;padding:10px 6px;color:var(--ink-dim)}
-  .seg button+button{border-left:1px solid var(--line)}
-  .seg button[aria-pressed="true"]{background:var(--signal);color:#14181C}
-  .field{margin-bottom:10px}
+  .seg{display:flex;border:1px solid var(--turf-line);border-radius:8px;overflow:hidden;background:var(--mow)}
+  .seg button{flex:1;border:0;border-radius:0;background:transparent;font-size:14px;padding:10px 6px;color:var(--chalk-dim)}
+  .seg button+button{border-left:1px solid var(--turf-line)}
+  .seg button[aria-pressed="true"]{background:var(--flood);color:#20180A}
+
+  .field{margin-bottom:11px}
   .field:last-child{margin-bottom:0}
-  label.lab{display:block;font-size:13px;color:var(--ink-dim);margin-bottom:5px}
-  select{width:100%;font:inherit;padding:11px 10px;border-radius:10px;background:var(--panel-2);color:var(--ink);border:1px solid var(--line)}
+  label.lab{display:block;font-size:13px;color:var(--chalk-dim);margin-bottom:5px}
+  select{width:100%;font:inherit;padding:11px 10px;border-radius:8px;background:var(--mow);color:var(--chalk);border:1px solid var(--turf-line)}
 
-  input[type=range]{width:100%;accent-color:var(--signal);margin:2px 0}
-  .marks{position:relative;height:22px;margin-top:-2px}
-  .mark{position:absolute;transform:translateX(-50%);font-size:11px;color:var(--ink-dim);white-space:nowrap}
-  .mark::before{content:"";display:block;width:1px;height:6px;background:var(--line);margin:0 auto 2px}
-  .keys{display:flex;gap:6px;margin-top:8px}
-  .keys button{flex:1;padding:9px 4px;font-size:13px;font-weight:600}
+  /* timeline: yardage markers along the swing */
+  input[type=range]{width:100%;accent-color:var(--flood);margin:2px 0}
+  .marks{position:relative;height:24px;margin-top:-2px}
+  .mark{position:absolute;transform:translateX(-50%);font-size:11px;color:var(--chalk-dim);white-space:nowrap}
+  .mark::before{content:"";display:block;width:2px;height:8px;background:var(--flood);margin:0 auto 3px;opacity:.8}
+  .keys{display:flex;gap:6px;margin-top:9px}
+  .keys button{flex:1;padding:9px 4px;font-size:13px}
 
-  .tempo{display:flex;height:34px;border-radius:8px;overflow:hidden;border:1px solid var(--line);font-size:12px;font-weight:600}
-  .tempo div{display:flex;align-items:center;justify-content:center;color:#14181C;min-width:0}
-  .t-back{background:var(--ink-dim)}
-  .t-down{background:var(--signal)}
-  .ratio{font-size:30px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-0.02em;margin:6px 0 2px}
-  .sub{font-size:13px;color:var(--ink-dim)}
+  /* tempo: two mown strips */
+  .tempo{display:flex;height:36px;border-radius:3px;overflow:hidden;border:1px solid #C3C2AE;font-size:12px;font-weight:700}
+  .tempo div{display:flex;align-items:center;justify-content:center;min-width:0}
+  .t-back{background:var(--mow);color:var(--chalk)}
+  .t-down{background:var(--flood);color:#20180A}
+  .ratio{font-size:34px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-0.03em;margin:4px 0 2px}
+  .sub{font-size:13px;color:var(--chalk-dim)}
 
-  .metric{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:10px 0;border-top:1px solid var(--line)}
+  /* scorecard rows */
+  .metric{display:grid;grid-template-columns:1fr auto;gap:2px 10px;padding:10px 0;border-top:1px solid rgba(28,43,32,.22)}
   .metric:first-of-type{border-top:0}
-  .m-name{font-weight:600}
-  .m-val{font-variant-numeric:tabular-nums;font-weight:650;text-align:right}
-  .m-note{grid-column:1/-1;font-size:13px;color:var(--ink-dim)}
-  .m-bar{grid-column:1/-1;height:5px;background:var(--panel-2);border-radius:3px;position:relative;margin-top:5px;overflow:hidden}
-  .m-bar i{position:absolute;inset:0 auto 0 0;display:block;border-radius:3px}
-  .ok{color:var(--good)} .warn{color:var(--signal)} .off{color:var(--bad)}
-  .bg-ok{background:var(--good)} .bg-warn{background:var(--signal)} .bg-off{background:var(--bad)}
+  .m-name{font-weight:650}
+  .m-val{font-variant-numeric:tabular-nums;font-weight:700;text-align:right}
+  .m-val .sub{color:var(--pencil);font-weight:500}
+  .m-note{grid-column:1/-1;font-size:13px;color:var(--pencil)}
+  .m-bar{grid-column:1/-1;height:5px;background:rgba(28,43,32,.14);border-radius:0;position:relative;margin-top:6px;overflow:hidden}
+  .m-bar i{position:absolute;inset:0 auto 0 0;display:block}
 
-  .score{display:flex;align-items:baseline;gap:10px;margin-bottom:4px}
-  .score b{font-size:38px;font-weight:650;font-variant-numeric:tabular-nums;letter-spacing:-0.02em}
-  .status{font-size:13px;color:var(--ink-dim);min-height:18px;margin-top:8px}
-  .caveat{font-size:12px;color:var(--ink-dim);line-height:1.5}
-  details summary{font-size:13px;color:var(--ink-dim);cursor:pointer;padding:4px 0}
+  .ok{color:#2C6B39} .warn{color:#8E6A14} .off{color:#A6382D}
+  .bg-ok{background:#2C6B39} .bg-warn{background:#B98A1C} .bg-off{background:#A6382D}
+  .card .ok{color:var(--grass)} .card .warn{color:var(--flood)} .card .off{color:#E4796C}
+
+  /* total box, ruled like a card's total cell */
+  .score{display:flex;align-items:center;gap:12px;margin-bottom:10px}
+  .score b{
+    font-size:36px;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:-0.03em;
+    min-width:88px;text-align:center;padding:2px 10px 4px;
+    border:2px solid var(--ink);border-bottom-width:5px;border-radius:2px;
+  }
+  .score .sub{color:var(--pencil);flex:1}
+
+  .status{font-size:13px;color:var(--chalk-dim);min-height:18px;margin-top:9px}
+  .caveat{font-size:12px;color:var(--chalk-dim);line-height:1.5}
+  .paper .caveat{color:var(--pencil)}
+  details summary{font-size:13px;color:var(--chalk-dim);cursor:pointer;padding:4px 0}
   .hide{display:none}
   #file{display:none}
 </style>
@@ -120,7 +184,7 @@
 </div>
 
 <div class="stage" id="stageWrap">
-  <div class="stage-empty" id="empty">Record a slow-motion swing on your Camera app, then load it here.</div>
+  <div class="stage-empty" id="empty">Set the phone down at the end of the mat, then film a swing in slow motion.</div>
   <canvas id="stage" class="hide"></canvas>
   <video id="live" playsinline muted></video>
   <div class="badge hide" id="badge">—</div>
@@ -191,7 +255,7 @@
 </div>
 
 <div class="card hide" id="playerCard">
-  <h2>Frames</h2>
+  <h2>The swing, frame by frame</h2>
   <input type="range" id="scrub" min="0" max="0" value="0">
   <div class="marks" id="marks"></div>
   <div class="keys">
@@ -213,7 +277,7 @@
   </div>
 </div>
 
-<div class="card hide" id="tempoCard">
+<div class="paper hide" id="tempoCard">
   <h2>Tempo</h2>
   <div class="ratio" id="ratio">—</div>
   <div class="sub" id="tempoSub"></div>
@@ -223,13 +287,13 @@
   </div>
 </div>
 
-<div class="card hide" id="scoreCard">
+<div class="paper hide" id="scoreCard">
   <div class="score"><b id="scoreNum">—</b><span class="sub" id="scoreLabel"></span></div>
   <div id="metrics"></div>
 </div>
 
-<div class="card hide" id="fixCard">
-  <h2>What to work on first</h2>
+<div class="paper hide" id="fixCard">
+  <h2>Take this to the range</h2>
   <div id="fixes"></div>
 </div>
 
@@ -709,20 +773,20 @@ function draw(i){
   try{ cx.drawImage(f.img,0,0,f.w,f.h); }catch(e){}
   if(f.lm){
     cx.lineWidth = Math.max(2, f.w/140);
-    cx.strokeStyle = "#E8A13A";
+    cx.strokeStyle = "#F0C24B";
     for(const [a,b] of EDGES){
       const p1=f.lm[a], p2=f.lm[b];
       if(!p1||!p2) continue;
       cx.beginPath(); cx.moveTo(p1.x*f.w,p1.y*f.h); cx.lineTo(p2.x*f.w,p2.y*f.h); cx.stroke();
     }
-    cx.fillStyle = "#F2EFE9";
+    cx.fillStyle = "#EDF2E8";
     for(const j of [0,11,12,13,14,15,16,23,24,25,26,27,28]){
       const p=f.lm[j]; if(!p) continue;
       cx.beginPath(); cx.arc(p.x*f.w,p.y*f.h, Math.max(2.5,f.w/110),0,7); cx.fill();
     }
     // hand path trace
     if(phases){
-      cx.strokeStyle="rgba(111,179,168,.85)"; cx.lineWidth=Math.max(1.5,f.w/220);
+      cx.strokeStyle="rgba(121,184,96,.9)"; cx.lineWidth=Math.max(1.5,f.w/220);
       cx.beginPath(); let started=false;
       for(let k=phases.address;k<=Math.min(i,phases.finish);k++){
         const g=frames[k]; if(!g.lm) continue;
@@ -732,7 +796,7 @@ function draw(i){
       cx.stroke();
     }
     // spine line
-    cx.strokeStyle="rgba(242,239,233,.5)"; cx.setLineDash([5,5]); cx.lineWidth=Math.max(1.5,f.w/240);
+    cx.strokeStyle="rgba(237,242,232,.55)"; cx.setLineDash([5,5]); cx.lineWidth=Math.max(1.5,f.w/240);
     const s=shoul(f), hp=hips(f);
     cx.beginPath(); cx.moveTo(hp.x*f.w,hp.y*f.h); cx.lineTo(s.x*f.w,s.y*f.h); cx.stroke();
     cx.setLineDash([]);
@@ -810,8 +874,8 @@ function setStatus(t){ $('status').textContent = t; }
 /* ---------- install as web app ---------- */
 const manifest = {
   name:"Swing Lab", short_name:"Swing Lab", start_url:".", display:"standalone",
-  background_color:"#0F1419", theme_color:"#0F1419",
-  icons:[{src:"data:image/svg+xml,"+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#0F1419"/><path d="M148 392 L272 120" stroke="#E8A13A" stroke-width="26" stroke-linecap="round" fill="none"/><circle cx="336" cy="364" r="42" fill="#F2EFE9"/><path d="M148 392 Q198 274 272 120" stroke="#6FB3A8" stroke-width="12" fill="none" stroke-dasharray="20 20"/></svg>`),
+  background_color:"#12241A", theme_color:"#12241A",
+  icons:[{src:"data:image/svg+xml,"+encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512"><rect width="512" height="512" fill="#12241A"/><rect y="364" width="512" height="148" fill="#2E4A32"/><path d="M176 364 L176 114 L336 160 L176 206" fill="#F0C24B"/><circle cx="364" cy="426" r="38" fill="#EDF2E8"/></svg>`),
     sizes:"512x512", type:"image/svg+xml", purpose:"any"}]
 };
 const mLink = document.createElement('link');
