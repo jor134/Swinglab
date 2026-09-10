@@ -80,7 +80,7 @@
     margin-bottom:11px;
   }
   #stage{display:block;width:100%;height:auto;background:#05100A}
-  #live{display:none;width:100%;height:auto;background:#05100A}
+  #live{display:none;width:100%;height:auto;object-fit:cover;background:#05100A}
   .stage.livemode #stage{display:none}
   .stage.livemode #live{display:block}
   .stage-empty{
@@ -502,7 +502,22 @@ async function setTorch(on){
   try{ await track.applyConstraints({advanced:[{torch:!!on}]}); return true; }catch(e){ return false; }
 }
 
+function freshLiveEl(){
+  const old = $('live');
+  const v = document.createElement('video');
+  v.id = 'live';
+  v.playsInline = true; v.muted = true; v.autoplay = true;
+  v.setAttribute('playsinline',''); v.setAttribute('muted','');
+  v.onresize = ()=> fitLive(v);
+  old.replaceWith(v);
+  return v;
+}
+function fitLive(v){
+  if(v.videoWidth && v.videoHeight) v.style.aspectRatio = v.videoWidth + ' / ' + v.videoHeight;
+}
+
 async function openLive(auto){
+  closeLive();
   try{
     stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720},frameRate:{ideal:60}},audio:false});
   }catch(e){
@@ -510,7 +525,16 @@ async function openLive(auto){
                    : "Camera access was refused. Allow it in Settings, or load a clip instead.");
     return;
   }
-  const v = $('live'); v.srcObject = stream; await v.play();
+  const v = freshLiveEl();
+  v.srcObject = stream;
+  await new Promise(res=>{
+    if(v.readyState >= 1) return res();
+    const done = ()=>{ v.removeEventListener('loadedmetadata',done); res(); };
+    v.addEventListener('loadedmetadata',done);
+    setTimeout(done, 2000);
+  });
+  fitLive(v);
+  try{ await v.play(); }catch(e){}
   $('stageWrap').classList.add('livemode');
   $('liveControls').classList.remove('hide');
   $('delayField').classList.remove('hide');
@@ -530,6 +554,8 @@ $('stopLive').onclick = closeLive;
 function closeLive(){
   setTorch(false);
   if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  const v = $('live');
+  if(v){ try{ v.pause(); }catch(e){} v.srcObject = null; v.removeAttribute('src'); v.style.aspectRatio=''; try{ v.load(); }catch(e){} }
   releaseAwake();
   $('stageWrap').classList.remove('livemode','counting','recording');
   $('liveControls').classList.add('hide');
