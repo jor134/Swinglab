@@ -172,6 +172,9 @@
   .caveat{font-size:12px;color:var(--chalk-dim);line-height:1.5}
   .paper .caveat{color:var(--pencil)}
   details summary{font-size:13px;color:var(--chalk-dim);cursor:pointer;padding:4px 0}
+  .diagram{display:block;width:100%;height:auto;margin:12px 0 8px;
+    background:repeating-linear-gradient(90deg,rgba(47,82,56,.35) 0 1px, transparent 1px 22px);
+    border-radius:3px}
   .hide{display:none}
   #file{display:none}
 </style>
@@ -196,8 +199,8 @@
   <div class="field">
     <label class="lab" for="file">Swing clip</label>
     <div class="row">
-      <button class="primary" id="pick">Load a clip</button>
-      <button id="liveBtn">Use live camera</button>
+      <button class="primary" id="liveBtn">Open the camera</button>
+      <button id="pick">Load a clip</button>
     </div>
     <input type="file" id="file" accept="video/*">
   </div>
@@ -231,9 +234,35 @@
   <div class="field">
     <label class="lab">Camera position</label>
     <div class="seg" id="viewSeg">
-      <button data-v="face" aria-pressed="true">Face-on</button>
-      <button data-v="dtl" aria-pressed="false">Down-the-line</button>
+      <button data-v="face" aria-pressed="false">Face-on</button>
+      <button data-v="dtl" aria-pressed="true">Down-the-line</button>
     </div>
+    <svg class="diagram" viewBox="0 0 320 196" width="100%" role="img" aria-labelledby="diagTitle">
+      <title id="diagTitle">Where to put the phone relative to the ball and target</title>
+      <line x1="158" y1="78" x2="278" y2="78" stroke="rgba(237,242,232,.4)" stroke-width="2" stroke-dasharray="6 6"/>
+      <line x1="284" y1="78" x2="284" y2="50" stroke="#EDF2E8" stroke-width="2"/>
+      <path d="M284 51 L303 58 L284 65 Z" fill="#C4453A"/>
+      <text x="284" y="86" fill="#9FB6A4" font-size="10" text-anchor="middle" font-family="-apple-system,sans-serif">target</text>
+      <circle cx="150" cy="78" r="4.5" fill="#EDF2E8"/>
+      <text x="132" y="74" fill="#9FB6A4" font-size="10" text-anchor="end" font-family="-apple-system,sans-serif">ball</text>
+      <line x1="150" y1="100" x2="150" y2="84" stroke="rgba(121,184,96,.8)" stroke-width="2"/>
+      <rect x="127" y="99" width="46" height="9" rx="4.5" fill="#79B860"/>
+      <circle cx="150" cy="113" r="9" fill="#79B860"/>
+      <text x="186" y="110" fill="#9FB6A4" font-size="10" font-family="-apple-system,sans-serif">you</text>
+      <g id="dFace">
+        <path d="M150 48 L119 96 L181 96 Z" fill="rgba(240,194,75,.16)"/>
+        <rect x="139" y="12" width="22" height="34" rx="4" fill="#F0C24B"/>
+        <circle cx="150" cy="40" r="3.2" fill="#20180A"/>
+        <text x="169" y="30" fill="#F0C24B" font-size="10" font-family="-apple-system,sans-serif">phone</text>
+      </g>
+      <g id="dDtl">
+        <path d="M150 148 L121 106 L179 106 Z" fill="rgba(240,194,75,.16)"/>
+        <rect x="139" y="150" width="22" height="34" rx="4" fill="#F0C24B"/>
+        <circle cx="150" cy="156" r="3.2" fill="#20180A"/>
+        <text x="169" y="172" fill="#F0C24B" font-size="10" font-family="-apple-system,sans-serif">phone</text>
+      </g>
+    </svg>
+    <p class="caveat" id="camNote"></p>
   </div>
   <div class="field">
     <label class="lab">You swing</label>
@@ -314,7 +343,7 @@ const $ = id => document.getElementById(id);
 const LM = {NOSE:0,LSH:11,RSH:12,LEL:13,REL:14,LWR:15,RWR:16,LHIP:23,RHIP:24,LKNEE:25,RKNEE:26,LANK:27,RANK:28};
 const EDGES = [[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
 
-let landmarker=null, frames=[], phases=null, view='face', hand='R', stream=null, refSwing=null, current=0;
+let landmarker=null, frames=[], phases=null, view='dtl', hand='R', stream=null, refSwing=null, current=0;
 
 /* ---------- model ---------- */
 try{
@@ -338,7 +367,16 @@ function seg(el, attr, cb){
     cb(b.dataset[attr]);
   });
 }
-seg($('viewSeg'),'v', v=>{view=v; if(frames.length) analyse();});
+seg($('viewSeg'),'v', v=>{view=v; renderDiagram(); if(frames.length) analyse();});
+function renderDiagram(){
+  const dtl = view==='dtl';
+  $('dFace').style.display = dtl ? 'none' : '';
+  $('dDtl').style.display = dtl ? '' : 'none';
+  $('camNote').textContent = dtl
+    ? "Phone behind you, roughly 8 to 10 feet back, lens level with your hands and pointing at the ball with the target beyond it."
+    : "Phone across the ball from you, roughly 8 to 10 feet away, lens level with your hands and square to the target line.";
+}
+renderDiagram();
 seg($('handSeg'),'h', h=>{hand=h; if(frames.length) analyse();});
 
 /* ---------- clip loading ---------- */
@@ -464,10 +502,14 @@ async function setTorch(on){
   try{ await track.applyConstraints({advanced:[{torch:!!on}]}); return true; }catch(e){ return false; }
 }
 
-$('liveBtn').onclick = async ()=>{
+async function openLive(auto){
   try{
     stream = await navigator.mediaDevices.getUserMedia({video:{facingMode:'environment',width:{ideal:1280},height:{ideal:720},frameRate:{ideal:60}},audio:false});
-  }catch(e){ setStatus("Camera access was refused. Allow it in Settings, or load a clip instead."); return; }
+  }catch(e){
+    setStatus(auto ? "Camera not open yet. Tap Open the camera to allow it, or load a slow-motion clip instead."
+                   : "Camera access was refused. Allow it in Settings, or load a clip instead.");
+    return;
+  }
   const v = $('live'); v.srcObject = stream; await v.play();
   $('stageWrap').classList.add('livemode');
   $('liveControls').classList.remove('hide');
@@ -482,7 +524,8 @@ $('liveBtn').onclick = async ()=>{
   setStatus(torchAvailable
     ? "Countdown beeps while you set up, then a long tone and the flash mean it is recording."
     : "This browser cannot control the phone flash, so listen for the tones: rising beeps during the countdown, one long tone at the start, a low tone at the end.");
-};
+}
+$('liveBtn').onclick = ()=> openLive(false);;
 $('stopLive').onclick = closeLive;
 function closeLive(){
   setTorch(false);
@@ -891,6 +934,9 @@ $('install').onclick = async ()=>{
   setStatus("In Safari, tap the share button, then Add to Home Screen. It then opens full screen with no browser bar.");
 };
 if(window.navigator.standalone || matchMedia('(display-mode: standalone)').matches) $('install').style.display='none';
+
+/* live camera is the default path — try to open it as soon as the page is ready */
+openLive(true);
 </script>
 </body>
 </html>
